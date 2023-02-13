@@ -14,7 +14,7 @@ import javax.persistence.Table
 data class Dictionary(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private val id: Int,
+    private val id: Long,
 
     private val name: String,
 
