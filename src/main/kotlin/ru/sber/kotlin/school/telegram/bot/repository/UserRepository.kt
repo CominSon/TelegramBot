@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository
 import ru.sber.kotlin.school.telegram.bot.model.Dictionary
 import ru.sber.kotlin.school.telegram.bot.model.User
 
+
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
 

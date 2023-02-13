@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import ru.sber.kotlin.school.telegram.bot.model.Dictionary
 import ru.sber.kotlin.school.telegram.bot.repository.UserRepository
 
+
 @Service
 class UserService(val userRepository: UserRepository) {
 
