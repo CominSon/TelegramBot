@@ -8,7 +8,6 @@ import org.telegram.abilitybots.api.objects.Ability
 import org.telegram.abilitybots.api.objects.Locality
 import org.telegram.abilitybots.api.objects.Privacy
 import org.telegram.abilitybots.api.objects.Reply
-import org.telegram.abilitybots.api.util.AbilityUtils.getChatId
 import org.telegram.telegrambots.meta.api.methods.AnswerInlineQuery
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
@@ -21,20 +20,18 @@ import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQuery
 import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQueryResultArticle
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
-import ru.sber.kotlin.school.telegram.bot.service.menu.AdditionAndDeleterMenusToFavoriteDictionariesService
 import ru.sber.kotlin.school.telegram.bot.service.menu.DictionaryMenuService
 
-
-@Component
-class AbilityBotExample(
+//@Component
+class AbilityBotExampleDRAFT(
     @Value("\${telegram.bot.token}")
     private val token: String,
     @Value("\${telegram.bot.name}")
     private val name: String,
-    val dictionaryMenuService: DictionaryMenuService,
-    val additionAndDeleterMenusToFavoriteDictionariesService: AdditionAndDeleterMenusToFavoriteDictionariesService
+    val dictionaryMenuService: DictionaryMenuService
 ) : AbilityBot(token, name) {
     override fun creatorId(): Long = 1234
 
@@ -83,6 +80,7 @@ class AbilityBotExample(
             .switchPmParameter("dict")
             .results(results)
             .build()
+
     }
 
     /**
@@ -284,7 +282,7 @@ class AbilityBotExample(
      */
     fun dictionaryMenu() : Ability = Ability.builder()
         .name("dict_menu")
-        .info("Получаем меню в зоне текста и список словарей на изучении")
+        .info("Получаем клавиатурное меню и список словарей на изучении")
         .locality(Locality.USER)
         .privacy(Privacy.PUBLIC)
         .action { ctx ->
@@ -293,94 +291,82 @@ class AbilityBotExample(
         }
         .build()
 
-    /**
-     * Команда inlineQuery {allDictionaries} отправляет пользователю развернутый список всех словарей (при нажатии Добавить из готовых)
-     */
-
-    fun inlineReplyListDictionaries(): Reply {
-        val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
-            //здесь получение списка всех словарей
-            val partOfMessageText = "добавлен в словари"
-            val answer = additionAndDeleterMenusToFavoriteDictionariesService.getMenuAllDictionaries(upd, partOfMessageText)
-            sender.execute(answer)
-        }
-        return Reply.of(action, isInlineQueryAllDictionaries())
-    }
-
-    private fun isInlineQueryAllDictionaries(): (Update) -> Boolean = { upd: Update ->
-        upd.hasInlineQuery() && upd.inlineQuery.query == "allDictionaries"
-    }
-
-    //ловим ответ пользователя по словарю, который надо добавить на изучение
-    fun replyMessageAdditionDictionaryToFavorites(): Reply {
-        val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
-            //здесь добавление словаря в словари на изучении
-            additionAndDeleterMenusToFavoriteDictionariesService.addDictionaryToFavorites(upd)
-        }
-        return Reply.of(action, isAdditionDictionaryToFavorites())
-    }
-
-    private fun isAdditionDictionaryToFavorites(): (Update) -> Boolean = { upd: Update ->
-        upd.hasMessage() && upd.message.hasText() && upd.message.text.endsWith("добавлен в словари для изучения")
+    fun replyMessage(message : String, upd: Update) {
+        val msg = SendMessage(
+            upd.message.chatId.toString(),
+            "${upd.message.from.firstName}" + message
+        )
+        //Удалить клавиатуру
+        msg.replyMarkup = ReplyKeyboardRemove(true)
+        sender.execute(msg)
     }
 
     /**
-     * Команда inlineQuery {allFavDictionaries} отправляет пользователю развернутый список всех словарей (при нажатии Удалить словарь из списка изучаемых)
+     * Команда {В главное меню} отправляет пользователя в главное меню
      */
-    fun inlineReplyListFavDictionaries(): Reply {
+    fun replyMessageMainMenu(): Reply {
         val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
-            //здесь получение списка всех словарей
-            val partOfMessageText = "удален из словарей"
-            val answer = additionAndDeleterMenusToFavoriteDictionariesService.getMenuAllDictionaries(upd, partOfMessageText)
-            sender.execute(answer)
+            replyMessage(":", upd)
+            //здесь переход в главное меню (пока эта функция в качестве демонстрации)
+            val msg = sendInlineKeyboard(upd.message.chatId.toString())
+            sender.execute(msg)
         }
-        return Reply.of(action, isInlineQueryAllFavDictionaries())
+        return Reply.of(action, isMainMenu())
     }
 
-    private fun isInlineQueryAllFavDictionaries(): (Update) -> Boolean = { upd: Update ->
-        upd.hasInlineQuery() && upd.inlineQuery.query == "allFavDictionaries"
+    private fun isMainMenu(): (Update) -> Boolean = { upd: Update ->
+        upd.hasMessage() && upd.message.hasText() && upd.message.text == "В главное меню"
     }
 
-    //ловим ответ пользователя по словарю, который надо удалить из изучения
-    fun replyMessageDeleterDictionaryFromFavorites(): Reply {
+    /**
+     * Команда {Добавить из готовых} отправляет пользователя в список всех словарей
+     */
+    fun replyMessageListDictionaries(): Reply {
         val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
-            //здесь удаление словаря из словарей на изучении
-            additionAndDeleterMenusToFavoriteDictionariesService.deleteDictionaryToFavorites(upd)
+            replyMessage(", выберите словарь, который хотите добавить:", upd)
+            //здесь переход в список всех словарей
+            val msg = sendInlineKeyboard(upd.message.chatId.toString())//additionMenuToFavoriteDictionariesService.getMenuAllDictionaries(upd)
+            sender.execute(msg)
         }
-        return Reply.of(action, isDeleterDictionaryFromFavorites())
+        return Reply.of(action, isListDictionaries())
     }
 
-    private fun isDeleterDictionaryFromFavorites(): (Update) -> Boolean = { upd: Update ->
-        upd.hasMessage() && upd.message.hasText() && upd.message.text.endsWith("удален из словарей для изучения")
+    private fun isListDictionaries(): (Update) -> Boolean = { upd: Update ->
+        upd.hasMessage() && upd.message.hasText() && upd.message.text == "Добавить из готовых"
     }
 
-    /*override fun onUpdateReceived(update: Update?) {
-        super.onUpdateReceived(update)
-        if(update?.callbackQuery?.data == "temporary"){
-            val chatId = update.callbackQuery.message.chat.id.toString()
-            sender.execute(SendMessage(chatId,
-                "Временно, далее здесь методы перехода в меню или указания на создание темы нового словаря " +
-                        "(можно ввод пользователем темы сделать через inlinequery как в примере с fails - " +
-                        "вываливается fails (переименованный типо после двоеточия введите тему словаря: ) " +
-                        "и пользователь вводит тему и и направляет весь этот кусок в чат)"))
-        }
-    }*/
-
-    fun inlineReplyTemporary(): Reply {
+    /**
+     * Команда {Создать новый словарь} отправляет пользователя в создание нового словаря
+     */
+    fun replyMessageCreateNewDictionary(): Reply {
         val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
-            //временная затычка
-            sender.execute(SendMessage(
-                getChatId(upd).toString(),
-                "Временно, далее здесь методы перехода в меню или указания на создание темы нового словаря " +
-                        "(можно ввод пользователем темы сделать через inlinequery как в примере с fails - " +
-                        "вываливается fails (переименованный типо после двоеточия введите тему словаря: ) " +
-                        "и пользователь вводит тему и и направляет весь этот кусок в чат)"))
+            replyMessage(", введите название нового словаря:", upd)
+            //здесь переход в создание словаря (пока эта функция в качестве демонстрации)
+            val msg = sendInlineKeyboard(upd.message.chatId.toString())
+            sender.execute(msg)
         }
-        return Reply.of(action, isInlineQueryTemporary())
+        return Reply.of(action, isCreateNewDictionary())
     }
 
-    private fun isInlineQueryTemporary(): (Update) -> Boolean = { upd: Update ->
-        upd.hasCallbackQuery() && upd.callbackQuery.data == "temporary"
+    private fun isCreateNewDictionary(): (Update) -> Boolean = { upd: Update ->
+        upd.hasMessage() && upd.message.hasText() && upd.message.text == "Создать новый словарь"
     }
 
+    /**
+     * Команда {Удалить словарь из списка изучаемых} отправляет пользователю список словарей на изучении
+     * при нажатии на один из них идёт удаление этого словаря (по схеме из поведения пользователя)
+     */
+    fun replyMessageDeleteDictionaryFromFavorites(): Reply {
+        val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
+            replyMessage(", нажмите на словарь, который хотите удалить из списка изучаемых: ", upd)
+            //здесь переход в создание словаря (пока эта функция в качестве демонстрации)
+            val msg = sendInlineKeyboard(upd.message.chatId.toString())
+            sender.execute(msg)
+        }
+        return Reply.of(action, isDeleteDictionaryFromFavorites())
+    }
+
+    private fun isDeleteDictionaryFromFavorites(): (Update) -> Boolean = { upd: Update ->
+        upd.hasMessage() && upd.message.hasText() && upd.message.text == "Удалить словарь из списка изучаемых"
+    }
 }

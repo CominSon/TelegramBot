@@ -1,11 +1,10 @@
 package ru.sber.kotlin.school.telegram.bot.service.menu
 
-
 import org.springframework.stereotype.Service
 import org.telegram.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import ru.sber.kotlin.school.telegram.bot.service.database.DictionaryService
 import ru.sber.kotlin.school.telegram.bot.service.database.UserService
 
@@ -16,55 +15,66 @@ class DictionaryMenuService(val userService: UserService, val dictionaryService:
         val chatId = ctx.chatId().toString()
         val userId = ctx.user().id
         var message : SendMessage
-        // Create ReplyKeyboardMarkup object
-        val keyboardMarkup = ReplyKeyboardMarkup()
-        // Create the keyboard (list of keyboard rows)
-        val keyboard: MutableList<KeyboardRow> = ArrayList()
-        // Create a keyboard row
-        var row = KeyboardRow()
+        // Create InlineKeyboardMarkup object
+        val inlineKeyboardMarkup = InlineKeyboardMarkup()
+        // Create the keyboard (list of InlineKeyboardButton list)
+        val keyboard: MutableList<MutableList<InlineKeyboardButton>> = ArrayList()
+        // Create a list for buttons (the first row)
+        var buttons: MutableList<InlineKeyboardButton> = ArrayList()
+        var button : InlineKeyboardButton
         // есть или нет у пользователя словарей на изучении
         when(isFavoritesExist(userId)){
             true -> {
                 message = SendMessage(chatId,
                     "Список словарей у Вас на изучении: ${getListFavoriteDictionaries(userId)}")
-                createOneButtonInRow("Добавить из готовых",row,keyboard)
-                // Create another keyboard row
-                row = KeyboardRow();
-                createOneButtonInRow("Создать новый словарь",row,keyboard)
-                // Create another keyboard row
-                row = KeyboardRow()
-                createOneButtonInRow("Удалить словарь из списка изучаемых",row,keyboard)
-                // Create another keyboard row
-                row = KeyboardRow();
-                createOneButtonInRow("В главное меню",row,keyboard)
+                button = InlineKeyboardButton("Добавить из готовых")
+                button.switchInlineQueryCurrentChat = "allDictionaries"
+                buttons.add(button)
+                keyboard.add(buttons)
+                //create another new row
+                buttons = ArrayList()
+                button = InlineKeyboardButton("Создать новый словарь")
+                button.callbackData = "temporary" // пока так, дальше Андрей уточнит
+                buttons.add(button)
+                keyboard.add(buttons)
+                //create another new row
+                buttons = ArrayList()
+                button = InlineKeyboardButton("Удалить словарь из списка изучаемых")
+                button.switchInlineQueryCurrentChat = "allFavDictionaries"
+                buttons.add(button)
+                keyboard.add(buttons)
+                //create another new row
+                buttons = ArrayList()
+                button = InlineKeyboardButton("В главное меню")
+                button.callbackData = "temporary" // пока так, дальше Аня уточнит
+                buttons.add(button)
             }
             false -> {
-                //println("ЭТОТ СКРИПТ ОТРАБАТЫВАЕТ")
                 message = SendMessage(chatId,
                     "У вас нет выбранных словарей для изучения. Выберите из предложенных или создайте свой")
-                createOneButtonInRow("Создать новый словарь",row,keyboard)
-                // Create another keyboard row
-                row = KeyboardRow();
-                createOneButtonInRow("Добавить из готовых",row,keyboard)
-                // Create another keyboard row
-                row = KeyboardRow();
-                createOneButtonInRow("В главное меню",row,keyboard)
+                button = InlineKeyboardButton("Создать новый словарь")
+                button.callbackData = "temporary" // пока так, дальше Андрей уточнит
+                buttons.add(button)
+                keyboard.add(buttons)
+                //create another new row
+                buttons = ArrayList()
+                button = InlineKeyboardButton("Добавить из готовых")
+                button.switchInlineQueryCurrentChat = "allDictionaries"
+                buttons.add(button)
+                keyboard.add(buttons)
+                //create another new row
+                buttons = ArrayList()
+                button = InlineKeyboardButton("В главное меню")
+                button.callbackData = "temporary" // пока так, дальше Аня уточнит
+                buttons.add(button)
             }
         }
-        // Set the keyboard to the markup
-        keyboardMarkup.keyboard = keyboard
-        keyboardMarkup.oneTimeKeyboard = true
-        keyboardMarkup.isPersistent = true
+        keyboard.add(buttons)
+        inlineKeyboardMarkup.keyboard = keyboard
         // Add it to the message
-        message.replyMarkup = keyboardMarkup
+        message.replyMarkup = inlineKeyboardMarkup
 
         return message
-    }
-
-    fun isUserExist(userId : Long) : Boolean {
-        val userId = userService.getUserId(userId)
-        requireNotNull(userId) { return false }
-        return true
     }
 
     fun isFavoritesExist(userId : Long) : Boolean {
@@ -75,22 +85,11 @@ class DictionaryMenuService(val userService: UserService, val dictionaryService:
 
     fun getListFavoriteDictionaries(userId : Long) : String {
         var result = ""
-        /*var list = arrayListOf<String>()
-        list.add("Словарь А")
-        list.add("Словарь Б")
-        list.add("Словарь С")*/
         userService.getUserFavorites(userId).forEach { favDictionary ->
             val name = dictionaryService.getNameFavoriteDictionary(favDictionary)
             result += "\n--||--\n$name"
         }
 
         return result
-    }
-
-    fun createOneButtonInRow(nameButton : String, row : KeyboardRow, keyboard: MutableList<KeyboardRow>) {
-        // Set each button, you can also use KeyboardButton objects if you need something else than text
-        row.add(nameButton)
-        // Add the row to the keyboard
-        keyboard.add(row)
     }
 }
