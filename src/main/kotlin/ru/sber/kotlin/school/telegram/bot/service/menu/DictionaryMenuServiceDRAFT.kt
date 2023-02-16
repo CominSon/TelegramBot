@@ -79,8 +79,8 @@ class DictionaryMenuServiceDRAFT(val userService: UserService, val dictionarySer
         list.add("Словарь Б")
         list.add("Словарь С")*/
         userService.getUserFavorites(userId).forEach { favDictionary ->
-            val name = dictionaryService.getNameFavoriteDictionary(favDictionary)
-            result += "\n--||--\n$name"
+            //val name = dictionaryService.getNameFavoriteDictionary(favDictionary)
+            result += "\n--||--\n${favDictionary.name}"
         }
 
         return result

@@ -25,5 +25,6 @@ class User(
         joinColumns = [JoinColumn(name = "user_id")],
         inverseJoinColumns = [JoinColumn(name = "dict_id")]
     )
-    var favorites: List<Dictionary> = Collections.emptyList()
+    //требуется изменяемая коллекция для записи
+    var favorites: MutableCollection<Dictionary> = Collections.emptyList()
 )

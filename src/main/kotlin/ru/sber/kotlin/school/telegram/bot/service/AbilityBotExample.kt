@@ -345,7 +345,7 @@ class AbilityBotExample(
     fun replyMessageDeleterDictionaryFromFavorites(): Reply {
         val action: (BaseAbilityBot, Update) -> Unit = { _, upd ->
             //здесь удаление словаря из словарей на изучении
-            additionAndDeleterMenusToFavoriteDictionariesService.deleteDictionaryToFavorites(upd)
+            additionAndDeleterMenusToFavoriteDictionariesService.deleteDictionaryFromFavorites(upd)
         }
         return Reply.of(action, isDeleterDictionaryFromFavorites())
     }

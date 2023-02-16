@@ -58,11 +58,11 @@ class AdditionAndDeleterMenusToFavoriteDictionariesService(private val dictionar
         userService.setFavoriteDictionary(userId, theme)
     }
 
-    fun getAllFavDictionariesByUser(userId: Long) : List<Dictionary> {
-        return dictionaryService.getAllFavDictionariesByUser(userId)
+    fun getAllFavDictionariesByUser(userId: Long) : MutableCollection<Dictionary> {
+        return userService.getUserFavorites(userId)
     }
 
-    fun deleteDictionaryToFavorites(upd: Update){
+    fun deleteDictionaryFromFavorites(upd: Update){
         val userId = getUser(upd).id
         val message = upd.message.text
         //16 символов включая пробелы до темы в - Словарь с темой

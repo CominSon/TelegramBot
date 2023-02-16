@@ -11,7 +11,4 @@ import ru.sber.kotlin.school.telegram.bot.model.User
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
 
-    @Query("SELECT u.favorites FROM User u WHERE u.id = :userId")
-    fun findUserFavorites(@Param("userId") userId: Long): List<Dictionary>
-
 }

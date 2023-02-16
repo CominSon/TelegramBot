@@ -9,7 +9,7 @@ import ru.sber.kotlin.school.telegram.bot.service.database.DictionaryService
 import ru.sber.kotlin.school.telegram.bot.service.database.UserService
 
 @Service
-class DictionaryMenuService(val userService: UserService, val dictionaryService: DictionaryService) {
+class DictionaryMenuService(val userService: UserService) {
 
     fun getDictMenuAndInfoFavDict(ctx: MessageContext) : SendMessage{
         val chatId = ctx.chatId().toString()
@@ -86,8 +86,7 @@ class DictionaryMenuService(val userService: UserService, val dictionaryService:
     fun getListFavoriteDictionaries(userId : Long) : String {
         var result = ""
         userService.getUserFavorites(userId).forEach { favDictionary ->
-            val name = dictionaryService.getNameFavoriteDictionary(favDictionary)
-            result += "\n--||--\n$name"
+            result += "\n--||--\n${favDictionary.name}"
         }
 
         return result

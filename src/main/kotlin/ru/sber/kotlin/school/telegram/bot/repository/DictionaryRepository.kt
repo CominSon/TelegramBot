@@ -10,9 +10,6 @@ import ru.sber.kotlin.school.telegram.bot.model.User
 @Repository
 interface DictionaryRepository : JpaRepository<Dictionary, Long> {
 
-    @Query("SELECT d.name FROM Dictionary d WHERE d = :dictionary")
-    fun findDictionaryName(@Param("dictionary") dictionary: Dictionary): String
-
     @Query("SELECT d FROM Dictionary d WHERE d.owner = :user Or d.owner = 1")
     fun findAllDictionariesByUser(@Param("user") user: User): List<Dictionary>
 
